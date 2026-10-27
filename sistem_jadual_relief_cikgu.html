@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Jadual Waktu 2026 - Cikgu Che Nurathirah</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .pulse-subtle {
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-ring {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-16">
+
+    <!-- Top Header -->
+    <header class="bg-gradient-to-r from-emerald-700 via-teal-700 to-indigo-800 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-white/10 rounded-xl backdrop-blur-md border border-white/20">
+                    <i class="fa-solid fa-graduation-cap text-2xl text-emerald-300"></i>
+                </div>
+                <div>
+                    <span class="text-[10px] tracking-widest font-semibold text-emerald-200 uppercase">SK Seri Sabak Uni, Batu Pahat</span>
+                    <h1 class="font-extrabold text-base md:text-lg leading-tight">CHE NURATHIRAH BINTI CHE MOHAMAD NURIZAN</h1>
+                    <p class="text-xs text-teal-100 flex items-center mt-0.5">
+                        <i class="fa-solid fa-bell text-amber-300 mr-1.5 text-[10px]"></i> System Alert Jadual & Relief 2026
+                    </p>
+                </div>
+            </div>
+            <!-- Live Clock -->
+            <div class="text-right hidden sm:block">
+                <div id="liveClock" class="text-xl font-mono font-bold tracking-wider text-amber-300">00:00:00</div>
+                <div id="liveDate" class="text-xs text-teal-100">Isnin, 1 Jan</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-4 space-y-4">
+
+        <!-- Mobile Live Clock Display -->
+        <div class="sm:hidden bg-teal-800 text-white p-2.5 rounded-xl flex items-center justify-between text-xs font-semibold shadow-sm">
+            <span id="liveDateMobile" class="text-teal-200">--</span>
+            <span id="liveClockMobile" class="font-mono text-sm text-amber-300 font-bold">00:00:00</span>
+        </div>
+
+        <!-- Notification Authorization Banner -->
+        <div id="notifBanner" class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-bell-slash text-amber-500 text-2xl"></i>
+                <div>
+                    <p class="text-sm font-bold text-amber-900">Notifikasi Phone Belum Diaktifkan!</p>
+                    <p class="text-xs text-amber-800">Tekan butang di sebelah supaya phone Cikgu mengeluarkan amaran skrin & bunyi bip sebelum kelas/relief bermula.</p>
+                </div>
+            </div>
+            <button onclick="requestNotificationPermission()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shadow transition whitespace-nowrap">
+                Aktifkan Phone Noti
+            </button>
+        </div>
+
+        <!-- Live Status Bar: Shows Next / Current Class -->
+        <div class="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 rounded-2xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <div id="statusIconBg" class="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+                    <i id="statusIcon" class="fa-solid fa-chalkboard-user text-xl"></i>
+                </div>
+                <div>
+                    <span id="statusBadge" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        STATUS JADUAL
+                    </span>
+                    <h3 id="statusTitle" class="text-base font-bold text-slate-100 mt-0.5">Menganalisis jadual hari ini...</h3>
+                    <p id="statusSubtitle" class="text-xs text-slate-400">Peringatan automatik diaktifkan.</p>
+                </div>
+            </div>
+            <div id="countdownBox" class="bg-white/10 px-4 py-2 rounded-xl text-center border border-white/10 w-full md:w-auto">
+                <div class="text-[10px] text-slate-300 uppercase tracking-wider">Masa Tinggal / Bermula</div>
+                <div id="countdownTimer" class="font-mono text-lg font-bold text-amber-400">--:--</div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-slate-200 bg-white rounded-xl p-1 shadow-sm font-medium text-xs sm:text-sm text-slate-600">
+            <button onclick="switchTab('reliefTab')" id="tabBtnRelief" class="flex-1 py-2.5 rounded-lg text-center transition flex items-center justify-center space-x-1.5 bg-emerald-50 text-emerald-700 font-bold shadow-sm">
+                <i class="fa-solid fa-user-clock text-amber-500"></i>
+                <span>Relief Hari Ini</span>
+                <span id="reliefBadge" class="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
+            </button>
+            <button onclick="switchTab('scheduleTab')" id="tabBtnSchedule" class="flex-1 py-2.5 rounded-lg text-center transition flex items-center justify-center space-x-1.5 hover:text-emerald-700">
+                <i class="fa-solid fa-calendar-days text-teal-600"></i>
+                <span>Jadual Hakiki 2026</span>
+            </button>
+            <button onclick="switchTab('settingsTab')" id="tabBtnSettings" class="flex-1 py-2.5 rounded-lg text-center transition flex items-center justify-center space-x-1.5 hover:text-emerald-700">
+                <i class="fa-solid fa-sliders text-slate-500"></i>
+                <span>Tetapan Alert</span>
+            </button>
+        </div>
+
+        <!-- TAB 1: RELIEF HARIAN -->
+        <section id="reliefTab" class="space-y-4">
+            <!-- Form Input Relief -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center text-teal-700">
+                    <i class="fa-solid fa-plus-circle mr-2 text-amber-500"></i> Tambah Relief Harian (Guru Ganti)
+                </h3>
+                <form id="reliefForm" onsubmit="addReliefItem(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    <div class="sm:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Kelas Relief</label>
+                        <input type="text" id="reliefClass" placeholder="Cth: 5B / 2C" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Subjek / Catatan</label>
+                        <input type="text" id="reliefSubject" placeholder="Cth: BM (Ganti Ck. Ali)" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Mula</label>
+                        <input type="time" id="reliefStart" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tamat</label>
+                        <input type="time" id="reliefEnd" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div class="sm:col-span-2 flex items-end">
+                        <button type="submit" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-xs shadow transition">
+                            + Tambah Relief
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Senarai Relief -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-slate-800 text-sm">Senarai Slip Relief Cikgu Hari Ini</h3>
+                    <button onclick="clearAllRelief()" class="text-xs text-rose-600 hover:text-rose-800 font-semibold">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Padam Semua
+                    </button>
+                </div>
+                <div id="reliefList" class="space-y-2">
+                    <!-- Dynamic Relief Rows -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: JADUAL HAKIKI 2026 -->
+        <section id="scheduleTab" class="hidden space-y-4">
+            <!-- Day Selector -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-calendar-day text-emerald-600 text-lg"></i>
+                    <span class="font-bold text-slate-800 text-sm">Pilih Hari Untuk Paparan Jadual:</span>
+                </div>
+                <div class="flex space-x-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                    <button onclick="setFilterDay(1)" id="dayBtn1" class="px-3 py-1.5 rounded-lg text-xs font-bold transition border">Isnin</button>
+                    <button onclick="setFilterDay(2)" id="dayBtn2" class="px-3 py-1.5 rounded-lg text-xs font-bold transition border">Selasa</button>
+                    <button onclick="setFilterDay(3)" id="dayBtn3" class="px-3 py-1.5 rounded-lg text-xs font-bold transition border">Rabu</button>
+                    <button onclick="setFilterDay(4)" id="dayBtn4" class="px-3 py-1.5 rounded-lg text-xs font-bold transition border">Khamis</button>
+                    <button onclick="setFilterDay(5)" id="dayBtn5" class="px-3 py-1.5 rounded-lg text-xs font-bold transition border">Jumaat</button>
+                </div>
+            </div>
+
+            <!-- Schedule Item List -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <div id="scheduleList" class="space-y-2.5">
+                    <!-- Loaded from predefined array -->
+                </div>
+            </div>
+
+            <!-- Add / Reset Master Schedule Section -->
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wider">Pengurusan Jadual Hakiki</h4>
+                    <button onclick="resetDefaultTimetable()" class="text-xs text-emerald-700 hover:text-emerald-900 font-semibold underline">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> Reset Ke Jadual Asal 2026 Cikgu Nurathirah
+                    </button>
+                </div>
+                <form id="scheduleForm" onsubmit="addScheduleItem(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
+                    <div class="sm:col-span-2">
+                        <select id="schedDay" class="w-full p-2 border rounded-lg bg-white">
+                            <option value="1">Isnin</option>
+                            <option value="2">Selasa</option>
+                            <option value="3">Rabu</option>
+                            <option value="4">Khamis</option>
+                            <option value="5">Jumaat</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-3">
+                        <input type="text" id="schedClass" placeholder="Kelas (Cth: 2B)" required class="w-full p-2 border rounded-lg">
+                    </div>
+                    <div class="sm:col-span-3">
+                        <input type="text" id="schedSubject" placeholder="Subjek (Cth: PI / TASMIK)" required class="w-full p-2 border rounded-lg">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <input type="time" id="schedStart" required class="w-full p-2 border rounded-lg">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <input type="time" id="schedEnd" required class="w-full p-2 border rounded-lg">
+                    </div>
+                    <div class="sm:col-span-12 flex justify-end">
+                        <button type="submit" class="px-4 py-1.5 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-lg transition">
+                            + Tambah Waktu
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 3: TETAPAN ALERT -->
+        <section id="settingsTab" class="hidden space-y-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <h3 class="font-bold text-slate-800 text-sm border-b pb-2">Tetapan Peringatan Phone & Penggera</h3>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Masa Peringatan Awal (Sebelum Kelas Bermula)</label>
+                    <select id="alertLeadTime" onchange="saveSettings()" class="w-full sm:w-64 px-3 py-2 border rounded-lg text-sm outline-none">
+                        <option value="2">2 Minit Sebelum</option>
+                        <option value="5">5 Minit Sebelum</option>
+                        <option value="10">10 Minit Sebelum</option>
+                        <option value="15">15 Minit Sebelum</option>
+                    </select>
+                    <p class="text-xs text-slate-500 mt-1">Notifikasi pop-up dan penggera akan berbunyi di phone Cikgu mengikut selang masa ini.</p>
+                </div>
+
+                <div class="pt-2">
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="audioAlertToggle" onchange="saveSettings()" class="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" checked>
+                        <span class="text-xs font-semibold text-slate-700">Mainkan Bunyi Bip / Penggera semasa amaran keluar</span>
+                    </label>
+                </div>
+
+                <div class="pt-4 border-t flex flex-wrap gap-2">
+                    <button onclick="testNotification()" class="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-vial text-amber-400"></i>
+                        <span>Uji Sound & Pop-Up Notifikasi</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Alert Pop-up -->
+    <div id="modalAlert" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center border-4 border-amber-400 animate-bounce">
+            <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <span id="modalTag" class="px-3 py-1 bg-amber-100 text-amber-800 text-[10px] font-extrabold rounded-full tracking-wider uppercase">PERINGATAN KELAS</span>
+            
+            <!-- Big Bold Class Name -->
+            <div class="mt-3 bg-slate-100 py-2 px-3 rounded-2xl border border-slate-200">
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">NAMA KELAS</p>
+                <h3 id="modalClass" class="text-2xl font-black text-slate-800 mt-0.5">2B</h3>
+            </div>
+
+            <!-- Clear Time & Subject Slot -->
+            <div class="mt-2 space-y-1">
+                <div class="bg-emerald-50 text-emerald-900 py-2 px-3 rounded-xl border border-emerald-200">
+                    <p class="text-[10px] text-emerald-700 font-bold uppercase">MASA KELAS</p>
+                    <p id="modalTime" class="font-mono text-base font-extrabold">08:00 - 08:30</p>
+                </div>
+                <div class="bg-slate-50 py-2 px-3 rounded-xl border border-slate-200">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">SUBJEK / CATATAN</p>
+                    <p id="modalSubject" class="text-xs font-bold text-slate-700">Pendidikan Islam</p>
+                </div>
+            </div>
+
+            <p id="modalDesc" class="text-xs text-amber-700 font-semibold mt-3 bg-amber-50 py-1.5 px-3 rounded-lg border border-amber-200">
+                <i class="fa-solid fa-clock mr-1"></i> Bermula dalam 5 minit lagi!
+            </p>
+
+            <button onclick="closeModalAlert()" class="mt-4 w-full py-3 bg-emerald-600 text-white rounded-xl font-extrabold shadow-lg hover:bg-emerald-700 transition text-sm">
+                Faham & Tutup Alarm
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Exact Timetable Data extracted from image for Cikgu Che Nurathirah Binti Che Mohamad Nurizan
+        const defaultNurathirahSchedule = [
+            // ISNIN (1)
+            { id: 101, day: "1", className: "PERHIMPUNAN", subject: "Perhimpunan Rasmi", start: "07:30", end: "08:00" },
+            { id: 102, day: "1", className: "2B", subject: "Pendidikan Islam (Athirah)", start: "08:00", end: "08:30" },
+            { id: 103, day: "1", className: "2C", subject: "Pendidikan Islam (Athirah)", start: "09:00", end: "09:30" },
+            { id: 104, day: "1", className: "5B", subject: "RBT (Bengkel) (Athirah)", start: "11:30", end: "12:30" },
+
+            // SELASA (2)
+            { id: 201, day: "2", className: "1M1S", subject: "1M1S", start: "07:30", end: "08:30" },
+            { id: 202, day: "2", className: "2G", subject: "Pendidikan Islam (Athirah)", start: "08:30", end: "09:00" },
+            { id: 203, day: "2", className: "2C", subject: "Pendidikan Islam (Athirah)", start: "11:30", end: "12:00" },
+            { id: 204, day: "2", className: "2B", subject: "Tasmik (Athirah / Sozana)", start: "12:00", end: "12:30" },
+            { id: 205, day: "2", className: "2B", subject: "Pendidikan Islam (Athirah)", start: "12:30", end: "13:00" },
+
+            // RABU (3)
+            { id: 301, day: "3", className: "2B", subject: "Pendidikan Islam (Athirah)", start: "07:30", end: "08:00" },
+            { id: 302, day: "3", className: "2C", subject: "Pendidikan Islam (Athirah)", start: "08:30", end: "09:30" },
+            { id: 303, day: "3", className: "2G", subject: "Pendidikan Islam (Athirah)", start: "10:00", end: "11:00" },
+            { id: 304, day: "3", className: "2B", subject: "Pendidikan Islam (Athirah)", start: "12:00", end: "12:30" },
+            { id: 305, day: "3", className: "KOKO", subject: "Kokurikulum", start: "12:30", end: "13:30" },
+
+            // KHAMIS (4)
+            { id: 401, day: "4", className: "2G", subject: "Tasmik (Athirah / Akma)", start: "08:30", end: "09:30" },
+            { id: 402, day: "4", className: "2B", subject: "Pendidikan Islam (Athirah)", start: "10:00", end: "11:00" },
+            { id: 403, day: "4", className: "2C", subject: "Pendidikan Islam (Athirah)", start: "12:00", end: "12:30" },
+            { id: 404, day: "4", className: "4B", subject: "RBT (Bengkel) (Athirah)", start: "12:30", end: "13:30" },
+
+            // JUMAAT (5)
+            { id: 501, day: "5", className: "BUDAYA AL-QURAN", subject: "Budaya Al-Quran", start: "07:30", end: "08:00" },
+            { id: 502, day: "5", className: "2G", subject: "Pendidikan Islam (Athirah)", start: "08:00", end: "08:30" },
+            { id: 503, day: "5", className: "2G", subject: "Pendidikan Islam (Athirah)", start: "09:00", end: "09:30" },
+            { id: 504, day: "5", className: "2C", subject: "Tasmik (Athirah / Ain)", start: "10:00", end: "11:00" }
+        ];
+
+        // Persistent State
+        let masterSchedule = JSON.parse(localStorage.getItem('cikgu_schedule_v2')) || defaultNurathirahSchedule;
+        let dailyRelief = JSON.parse(localStorage.getItem('cikgu_relief_v2')) || [];
+        let settings = JSON.parse(localStorage.getItem('cikgu_settings_v2')) || { leadTime: 5, audio: true };
+        let alertedItems = new Set();
+        let selectedFilterDay = 1;
+
+        // Sound Synthesizer (Web Audio API)
+        function playBeepSound() {
+            if (!settings.audio) return;
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.6);
+            } catch(e) {
+                console.log("Audio waiting for user interaction.");
+            }
+        }
+
+        // Initialize App
+        window.onload = function() {
+            const now = new Date();
+            const currentDay = now.getDay();
+            
+            // Set active day tab to current weekday if Mon-Fri
+            if (currentDay >= 1 && currentDay <= 5) {
+                selectedFilterDay = currentDay;
+            }
+
+            updateClock();
+            setInterval(updateClock, 1000);
+
+            setFilterDay(selectedFilterDay);
+            renderReliefList();
+            checkNotificationPermissionStatus();
+
+            document.getElementById('alertLeadTime').value = settings.leadTime || 5;
+            document.getElementById('audioAlertToggle').checked = settings.audio !== false;
+        };
+
+        // Live Engine Clock & Status Analyzer
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ms-MY', { hour12: false });
+            const dateStr = now.toLocaleDateString('ms-MY', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+
+            document.getElementById('liveClock').textContent = timeStr;
+            document.getElementById('liveDate').textContent = dateStr;
+            document.getElementById('liveClockMobile').textContent = timeStr;
+            document.getElementById('liveDateMobile').textContent = dateStr;
+
+            updateLiveStatus(now);
+            checkClassAlerts(now);
+        }
+
+        // Dashboard Live Status Update
+        function updateLiveStatus(now) {
+            const day = now.getDay();
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+
+            // Combine today's relief + master schedule
+            let todayClasses = [];
+
+            // Add Reliefs
+            dailyRelief.forEach(r => {
+                todayClasses.push({ ...r, isRelief: true });
+            });
+
+            // Add Master Schedule
+            masterSchedule.filter(s => parseInt(s.day) === day).forEach(s => {
+                todayClasses.push({ ...s, isRelief: false });
+            });
+
+            todayClasses.sort((a,b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+
+            // Find ongoing class
+            const ongoing = todayClasses.find(c => {
+                const s = timeToMinutes(c.start);
+                const e = timeToMinutes(c.end);
+                return currentMins >= s && currentMins < e;
+            });
+
+            // Find upcoming class
+            const upcoming = todayClasses.find(c => timeToMinutes(c.start) > currentMins);
+
+            const titleEl = document.getElementById('statusTitle');
+            const subEl = document.getElementById('statusSubtitle');
+            const timerEl = document.getElementById('countdownTimer');
+            const badgeEl = document.getElementById('statusBadge');
+
+            if (ongoing) {
+                const minsLeft = timeToMinutes(ongoing.end) - currentMins;
+                badgeEl.textContent = ongoing.isRelief ? 'RELIEF SEDANG BERLANGSUNG' : 'KELAS SEDANG BERLANGSUNG';
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30";
+                titleEl.textContent = `KELAS: ${ongoing.className} | MASA: ${ongoing.start} - ${ongoing.end}`;
+                subEl.textContent = `Subjek: ${ongoing.subject}`;
+                timerEl.textContent = `${minsLeft} minit lagi`;
+            } else if (upcoming) {
+                const minsToStart = timeToMinutes(upcoming.start) - currentMins;
+                badgeEl.textContent = upcoming.isRelief ? 'RELIEF SETERUSNYA' : 'KELAS SETERUSNYA';
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+                titleEl.textContent = `KELAS: ${upcoming.className} | MASA: ${upcoming.start} - ${upcoming.end}`;
+                subEl.textContent = `Subjek: ${upcoming.subject}`;
+                timerEl.textContent = `${minsToStart} minit lagi`;
+            } else {
+                badgeEl.textContent = 'TIADA KELAS HARI INI / SELESAI';
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-500/20 text-slate-300 border border-slate-500/30";
+                titleEl.textContent = "Semua waktu kelas / relief telah selesai.";
+                subEl.textContent = "Tiada tugasan kelas berbaki untuk hari ini.";
+                timerEl.textContent = "Selesai";
+            }
+        }
+
+        // Notification Alerts Trigger
+        function checkClassAlerts(now) {
+            const day = now.getDay();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const leadMinutes = parseInt(settings.leadTime || 5);
+
+            // Relief items
+            dailyRelief.forEach(item => {
+                const startMins = timeToMinutes(item.start);
+                const triggerMins = startMins - leadMinutes;
+                const alertId = `relief_${item.id}_${now.toDateString()}`;
+
+                if (currentMinutes === triggerMins && !alertedItems.has(alertId)) {
+                    sendClassNotification(item, 'RELIEF', leadMinutes);
+                    alertedItems.add(alertId);
+                }
+            });
+
+            // Master schedule items
+            masterSchedule.filter(s => parseInt(s.day) === day).forEach(item => {
+                const startMins = timeToMinutes(item.start);
+                const triggerMins = startMins - leadMinutes;
+                const alertId = `sched_${item.id}_${now.toDateString()}`;
+
+                if (currentMinutes === triggerMins && !alertedItems.has(alertId)) {
+                    sendClassNotification(item, 'HAKIKI', leadMinutes);
+                    alertedItems.add(alertId);
+                }
+            });
+        }
+
+        function sendClassNotification(item, type, leadMinutes) {
+            playBeepSound();
+
+            const notifTitle = `${type === 'RELIEF' ? '🔔 RELIEF' : '🔔 KELAS'}: ${item.className} (${item.start} - ${item.end})`;
+            const notifBody = `NAMA KELAS: ${item.className}\nMASA: ${item.start} - ${item.end}\nSUBJEK: ${item.subject}\nBermula dalam ${leadMinutes} minit!`;
+
+            // Update In-App Modal
+            document.getElementById('modalTag').textContent = type === 'RELIEF' ? 'JADUAL RELIEF (GURU GANTI)' : 'JADUAL HAKIKI 2026';
+            document.getElementById('modalClass').textContent = item.className;
+            document.getElementById('modalTime').textContent = `${item.start} - ${item.end}`;
+            document.getElementById('modalSubject').textContent = item.subject;
+            document.getElementById('modalDesc').innerHTML = `<i class="fa-solid fa-clock mr-1"></i> Bermula dalam ${leadMinutes} minit lagi!`;
+            document.getElementById('modalAlert').classList.remove('hidden');
+
+            // Phone Push / System Banner Notification
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(notifTitle, {
+                    body: notifBody,
+                    icon: 'https://cdn-icons-png.flaticon.com/512/3429/3429149.png',
+                    requireInteraction: true
+                });
+            }
+        }
+
+        function closeModalAlert() {
+            document.getElementById('modalAlert').classList.add('hidden');
+        }
+
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                alert("Pelayar anda tidak menyokong notifikasi sistem.");
+                return;
+            }
+            Notification.requestPermission().then(permission => {
+                checkNotificationPermissionStatus();
+                if (permission === "granted") {
+                    new Notification("🔔 Notifikasi CikguAlert Diaktifkan!", {
+                        body: "NAMA KELAS & MASA akan dipaparkan pada skrin phone Cikgu mengikut jadual."
+                    });
+                }
+            });
+        }
+
+        function checkNotificationPermissionStatus() {
+            if ("Notification" in window && Notification.permission === "granted") {
+                document.getElementById('notifBanner').classList.add('hidden');
+            } else {
+                document.getElementById('notifBanner').classList.remove('hidden');
+            }
+        }
+
+        function testNotification() {
+            const sampleItem = {
+                className: "2G",
+                start: "08:30",
+                end: "09:00",
+                subject: "Pendidikan Islam (Athirah)"
+            };
+            sendClassNotification(sampleItem, 'HAKIKI', parseInt(settings.leadTime || 5));
+        }
+
+        // Tabs Toggle
+        function switchTab(tabId) {
+            ['reliefTab', 'scheduleTab', 'settingsTab'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+
+            const btnRelief = document.getElementById('tabBtnRelief');
+            const btnSched = document.getElementById('tabBtnSchedule');
+            const btnSet = document.getElementById('tabBtnSettings');
+
+            [btnRelief, btnSched, btnSet].forEach(btn => {
+                btn.className = "flex-1 py-2.5 rounded-lg text-center transition flex items-center justify-center space-x-1.5 hover:text-emerald-700";
+            });
+
+            if (tabId === 'reliefTab') btnRelief.className = "flex-1 py-2.5 rounded-lg text-center transition flex items-center justify-center space-x-1.5 bg-emerald-50 text-emerald-700 font-bold shadow-sm";
+            if (tabId === 'scheduleTab') btnSched.className = "flex-1 py-2.5 rounded-lg text-center transition flex items-center justify-center space-x-1.5 bg-emerald-50 text-emerald-700 font-bold shadow-sm";
+            if (tabId === 'settingsTab') btnSet.className = "flex-1 py-2.5 rounded-lg text-center transition flex items-center justify-center space-x-1.5 bg-emerald-50 text-emerald-700 font-bold shadow-sm";
+        }
+
+        // --- RELIEF FUNCTIONS ---
+        function addReliefItem(e) {
+            e.preventDefault();
+            const newItem = {
+                id: Date.now(),
+                className: document.getElementById('reliefClass').value.trim(),
+                subject: document.getElementById('reliefSubject').value.trim(),
+                start: document.getElementById('reliefStart').value,
+                end: document.getElementById('reliefEnd').value
+            };
+            dailyRelief.push(newItem);
+            localStorage.setItem('cikgu_relief_v2', JSON.stringify(dailyRelief));
+            document.getElementById('reliefForm').reset();
+            renderReliefList();
+        }
+
+        function renderReliefList() {
+            const list = document.getElementById('reliefList');
+            document.getElementById('reliefBadge').textContent = dailyRelief.length;
+
+            if (dailyRelief.length === 0) {
+                list.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">Tiada jadual relief dimasukkan untuk hari ini.</div>`;
+                return;
+            }
+
+            dailyRelief.sort((a,b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+
+            list.innerHTML = dailyRelief.map(item => `
+                <div class="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-amber-500 text-white rounded-lg">
+                            <i class="fa-solid fa-clock text-base"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-amber-800 uppercase tracking-wider">RELIEF</span>
+                            <h4 class="font-bold text-slate-800 text-sm">KELAS: ${escapeHtml(item.className)}</h4>
+                            <p class="text-xs text-slate-600">${escapeHtml(item.subject)}</p>
+                        </div>
+                    </div>
+                    <div class="text-right flex items-center space-x-2">
+                        <span class="px-2 py-1 bg-white border border-amber-300 text-amber-900 rounded font-mono text-xs font-bold">
+                            MASA: ${item.start} - ${item.end}
+                        </span>
+                        <button onclick="deleteRelief(${item.id})" class="text-slate-400 hover:text-rose-600 transition p-1">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteRelief(id) {
+            dailyRelief = dailyRelief.filter(item => item.id !== id);
+            localStorage.setItem('cikgu_relief_v2', JSON.stringify(dailyRelief));
+            renderReliefList();
+        }
+
+        function clearAllRelief() {
+            if (confirm("Padam semua senarai relief harian?")) {
+                dailyRelief = [];
+                localStorage.setItem('cikgu_relief_v2', JSON.stringify(dailyRelief));
+                renderReliefList();
+            }
+        }
+
+        // --- MASTER SCHEDULE FUNCTIONS ---
+        function setFilterDay(dayNum) {
+            selectedFilterDay = dayNum;
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.getElementById(`dayBtn${i}`);
+                if (i === dayNum) {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition border bg-teal-700 text-white border-teal-700 shadow-sm";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition border bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200";
+                }
+            }
+            renderScheduleList();
+        }
+
+        function renderScheduleList() {
+            const list = document.getElementById('scheduleList');
+            const items = masterSchedule.filter(s => parseInt(s.day) === selectedFilterDay);
+
+            if (items.length === 0) {
+                list.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">Tiada waktu kelas untuk hari ini.</div>`;
+                return;
+            }
+
+            items.sort((a,b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+
+            list.innerHTML = items.map(item => `
+                <div class="flex items-center justify-between p-3 bg-teal-50/60 border border-teal-100 rounded-xl">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-teal-700 text-white rounded-lg">
+                            <i class="fa-solid fa-book-open text-base"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm">KELAS: ${escapeHtml(item.className)}</h4>
+                            <p class="text-xs text-slate-600 font-medium">${escapeHtml(item.subject)}</p>
+                        </div>
+                    </div>
+                    <div class="text-right flex items-center space-x-2">
+                        <span class="px-2.5 py-1 bg-white border border-teal-200 text-teal-900 rounded font-mono text-xs font-bold">
+                            MASA: ${item.start} - ${item.end}
+                        </span>
+                        <button onclick="deleteSchedule(${item.id})" class="text-slate-400 hover:text-rose-600 transition p-1">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addScheduleItem(e) {
+            e.preventDefault();
+            const newItem = {
+                id: Date.now(),
+                day: document.getElementById('schedDay').value,
+                className: document.getElementById('schedClass').value.trim(),
+                subject: document.getElementById('schedSubject').value.trim(),
+                start: document.getElementById('schedStart').value,
+                end: document.getElementById('schedEnd').value
+            };
+            masterSchedule.push(newItem);
+            localStorage.setItem('cikgu_schedule_v2', JSON.stringify(masterSchedule));
+            document.getElementById('schedClass').value = '';
+            document.getElementById('schedSubject').value = '';
+            renderScheduleList();
+        }
+
+        function deleteSchedule(id) {
+            masterSchedule = masterSchedule.filter(item => item.id !== id);
+            localStorage.setItem('cikgu_schedule_v2', JSON.stringify(masterSchedule));
+            renderScheduleList();
+        }
+
+        function resetDefaultTimetable() {
+            if (confirm("Reset semula ke jadual asal 2026 Cikgu Che Nurathirah dari kementerian/sekolah?")) {
+                masterSchedule = [...defaultNurathirahSchedule];
+                localStorage.setItem('cikgu_schedule_v2', JSON.stringify(masterSchedule));
+                renderScheduleList();
+            }
+        }
+
+        function saveSettings() {
+            settings.leadTime = document.getElementById('alertLeadTime').value;
+            settings.audio = document.getElementById('audioAlertToggle').checked;
+            localStorage.setItem('cikgu_settings_v2', JSON.stringify(settings));
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
